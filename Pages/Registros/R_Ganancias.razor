@@ -1,0 +1,318 @@
+@page "/Ganancia"
+@page "/Ganancia/{GananciaId:int}"
+@attribute [Authorize]
+
+@inject GananciasBLL gananciasBLL
+@inject TicketsBLL ticketsBLL
+@inject NotificationService notificationService
+@inject LoteriasBLL loteriaBLL
+@inject TipoJugadasBLL tipoJugadasBLL
+
+<EditForm Model="ganancia" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="card border-primary mb-2" style="max-width: 100rem;">
+        <div class="card text-dark bg-light mb-2">
+
+            <h2 style="Margin:5px; text-shadow: 1px 2px rgba(0, 0, 0, 0.5); text-align: center; color:black">Registro Ganancia</h2>
+        </div>
+            <div class="card-body">
+
+                <div class="row justify-content-between">
+                    <div class="col-3">
+                    <label>Ganancia Id</label>
+                    <div class="input-group mb-3">
+                          <input type="number" class="form-control" @bind-value="ganancia.GananciaId" aria-label="Recipient's username" aria-describedby="basic-addon2">
+                        <button class="btn btn-outline-primary" type="button" @onclick="Buscar"> 
+                            <i class="oi oi-magnifying-glass" /> </button>
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <label>Fecha</label>
+                    <input type="date" class="form-control" @bind-value="@ganancia.FechaGanancia"  aria-label="Recipient's username" aria-describedby="basic-addon2">
+                </div>
+            </div>
+            
+            @* GANANCIA DETALLE*@ 
+            <fieldset class="border-success">
+                <div class="card-body">
+               <div class="row">
+                @* Loterias Id *@
+                 <div class="col-2">
+                     <label>Loterias</label>
+                            <div class="btn-group me-2" role="group" aria-label="Second group">
+                             <select class="form-select" @bind="Detalle.LoteriaId"
+                                 aria-label=".form-select-lg example">
+                                <option value="0" hidden selected>Seleccione</option>
+                                    @foreach (var loteria in LoteriasList)
+                                    {
+                                        <option value="@loteria.LoteriaId"> @loteria.NombreLoteria</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        
+
+                 @* Tipo Jugadas Id *@
+                <div class="col-2">
+                    <label>Tipos de jugadas</label>
+                     <div class="input-group me-2" role="group" aria-label="Second group">
+                         <select class="form-select" @bind="Detalle.TipoJugadaId"
+                            aria-label=".form-select-lg example">
+                             <option value="0" hidden selected>Seleccione</option>
+                                 @foreach( var tipoJugadas in TipoJugadasList)
+                                 {
+                                <option value="@tipoJugadas.TipoJugadaId"> @tipoJugadas.NombreJugada</option> 
+                                 }  
+                            </select>
+                            
+                           
+                        </div>
+                </div>
+
+                   @* Monto *@
+                <div class="col-2">
+                    <label>Monto</label>
+                    <InputNumber class="form-control" @bind-Value="Detalle.Monto" />     
+                </div>            
+
+                @* Ganancias *@
+                <div class="col-2">
+                    <label>Ganancias</label>
+                    <InputNumber class="form-control" @bind-Value="Detalle.Ganancia" />   
+                </div>
+
+                 @*Boton de agregar detalle*@
+                <div class="col-3">
+                    <button type="button" class="btn btn-outline-primary input-group-text mt-4" @onclick="AgregarDetalle">
+                        <span class="oi oi-plus"></span>
+                    </button>
+                </div>
+                </div>
+            </div>
+            </fieldset>
+
+            
+            @* Tabla de detalles *@
+            <hr />
+            <table class="table table-bordered table-light">
+                <thead class="thead">
+                    <tr class="table">
+                        <th>Nombre Loteria</th> 
+                        <th>Tipo Jugada</th>
+                        <th>Monto</th>
+                        <th>Ganancia</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                      @foreach (var item in ganancia.Detalle)
+                    {
+                        <tr>
+                             <td>@gananciasBLL.GetNombreLoteria(item.LoteriaId)</td> 
+                             <td>@gananciasBLL.GetNombreJugada(item.TipoJugadaId)</td>
+                             <td>@item.Monto</td>
+                            <td>@item.Ganancia</td>
+                            <td><span class="btn btn-sm btn-outline-primary oi oi-ban" href="#"
+                                @onclick="@(() => RemoverFila(item))">Remover</span> </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+             <div class="row  d-flex justify-content-end">
+                    <div class="col-2">
+                        <label>Total Ganancia</label>
+                        <span class="form-control"> @ganancia.TotalGanancia.ToString("N2") </span>
+                    </div>
+
+                </div>
+            <hr/>
+             <div class="card-footer d-flex justify-content-center">
+            <div class="d-grid gap-2 d-md-block">
+                <button type="button" class="btn btn-outline-primary" @onclick="Nuevo" > <i class="oi oi-file" /> Nuevo</button>
+                <button type="submit" class="btn btn-outline-success"> <i class="oi oi-document" /> Guardar</button>
+                <button type="button" class="btn btn-outline-danger"  @onclick="Eliminar"><i class="oi oi-trash" /> Eliminar</button>
+            </div>
+        </div>
+        </div>
+    </div> 
+</EditForm>
+@code
+{
+    [Parameter]
+    public int GananciaId { get; set; }
+    public Ganancias ganancia { get; set; } = new Ganancias();
+    public Loterias? loteria { get; set; } = new Loterias();
+    public TipoJugadas? tipoJugadas { get; set; } = new TipoJugadas();
+    public GananciasDetalle Detalle  { get; set; } = new GananciasDetalle();
+    public List<Loterias> LoteriasList { get; set; } = new List<Loterias>();
+    public List<TipoJugadas> TipoJugadasList { get; set; } = new List<TipoJugadas>();
+
+        protected override void OnInitialized()
+        {
+            LoteriasList = loteriaBLL.GetLoterias();
+            TipoJugadasList = tipoJugadasBLL.GetTipoJugadas();
+            ganancia.FechaGanancia = DateTime.Now;
+            ganancia.TotalGanancia = 0;
+
+            if (GananciaId > 0)
+            {
+                ganancia.GananciaId = GananciaId;
+                Buscar();
+            }
+        }
+ void Buscar()
+    {
+        var encontrado = gananciasBLL.Buscar(ganancia.GananciaId);
+        if (encontrado != null)
+            ganancia = encontrado;
+    }
+    void Nuevo()
+    {
+        this.ganancia = new Ganancias();
+        this.Detalle = new GananciasDetalle();
+        this.loteria=new Loterias();
+        this.tipoJugadas = new TipoJugadas();
+
+    }
+    void Guardar()
+    {
+        ganancia.GananciaId = 0;
+        if (GananciaValida() && gananciasBLL.Guardar(this.ganancia))
+        {
+            Nuevo();
+
+           ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Guardado correctamente"
+            }
+            );
+        }else{
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "No se pudo guardar"
+            }
+            );
+        }
+
+    }
+    public void AgregarDetalle()
+    {
+        if(DetalleValido())
+        {
+            
+            loteria = loteriaBLL.Buscar(Detalle.LoteriaId);
+            if(loteria==null)
+            {
+               ShowNotification(
+                new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Loteria no encontrada"
+                }
+                );
+                return;
+            }
+            tipoJugadas = tipoJugadasBLL.Buscar(Detalle.TipoJugadaId);
+            if(tipoJugadas==null)
+            {
+               ShowNotification(
+                new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Tipo de jugada no encontrada"
+                }
+                );
+                return;
+            }
+            
+            var tipo = gananciasBLL.Buscar(Detalle.TipoJugadaId);
+            ganancia.TotalGanancia = ganancia.Detalle.Sum(det => det.Ganancia);
+            this.ganancia.Detalle.Add(this.Detalle);
+            this.ganancia.Monto += (Detalle.Ganancia);
+            this.Detalle = new GananciasDetalle();
+            this.loteria=new Loterias();
+            this.tipoJugadas = new TipoJugadas();
+        }
+
+    }
+    void Eliminar()
+    {
+        if (gananciasBLL.Eliminar(this.ganancia))
+        {
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Se elimino correctamente"
+            });
+            Nuevo();
+        }
+        else
+        {
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "No se pudo eliminar"
+            });
+        }
+    }
+    private bool GananciaValida()
+    {
+        if(ganancia.Detalle.Count<=0)
+        {
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Debe ingresar al menos una ganancia"
+            });
+            return false;
+        }
+        return true;
+    }
+    private bool DetalleValido()
+    {
+        string MensajeError ="";
+        if(Detalle.LoteriaId==0)
+        {
+            MensajeError+="Debe seleccionar una loteria\n";
+        }
+        if(Detalle.TipoJugadaId==0)
+        {
+            MensajeError+="Debe seleccionar un tipo de jugada\n";
+        }
+        if(Detalle.Monto<=0)
+        {
+            MensajeError+="Debe ingresar un monto valido\n";
+        }
+        if(MensajeError.Length>0)
+        {
+           ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = MensajeError
+            });
+            return false;
+        }
+        return true;
+    }
+         void RemoverFila(GananciasDetalle item)
+        {
+            this.Detalle=item;
+           ganancia.Detalle.Remove(item);
+           ganancia.Monto -= item.Monto;
+        }
+        void ShowNotification(NotificationMessage message)
+        {
+            notificationService.Notify(message);
+        }
+        
+}

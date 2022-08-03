@@ -1,0 +1,150 @@
+@page "/Ganancias"
+
+@attribute [Authorize]
+@inject GananciasBLL gananciasBLL
+
+
+<EditForm Model="this" OnValidSubmit="@Buscar">
+    <div class="card border-primary mb-3" style="max-width: 100rem;">
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <h2 style="Margin:5px; text-shadow: 1px 2px rgba(0, 0, 0, 0.5); text-align: center; color:black">Consulta de Ganancia</h2>
+            </div>
+            <div class="card-body">
+
+                <form class="row row-cols-lg-auto g-3 align-items-center">
+                    @* Fecha Desde *@
+                    <div class="input-group" style=" margin-right: 10px; width: 15rem;">
+                        <span class="input-group-text">Desde</span>
+                        <InputDate @bind-Value="FechaDesde" class="form-control col-4" />
+                    </div>
+
+                    @* Fecha Hasta*@
+                    <div class="input-group" style=" width: 15rem;">
+                        <span class="input-group-text">Hasta</span>
+                        <InputDate @bind-Value="FechaHasta" class="form-control col-4" />
+                    </div>
+
+                    @* Filtro *@
+                    <div class="input-group" style="width: 15rem;">
+                        <span class="input-group-text">Filtro</span>
+                        <InputSelect class="form-select text-14 col-3" @bind-Value="Filtro">
+                            <option value="0" hidden selected>Seleccione</option>
+                            <option value="1">ID</option>
+                            <option value="2">Fecha</option>
+                            <option value="3">Monto</option>
+                        </InputSelect>
+                    </div>
+
+
+                    @* TextBox Busqueda *@
+                  <div class="input-group" style=" margin-right: 10px; width: 15rem;">
+                            <span class="input-group-text">Busqueda</span>
+                            <InputText class="form-control" @bind-Value="Criterio" />
+                        </div>
+                    
+
+                    @* Boton Buscar *@
+                    <button type="button" style="z-index:0;" class="btn btn-outline-primary" @onclick="Buscar">
+                        <i class="oi oi-magnifying-glass mr-2" />
+                    </button>
+
+                </form>
+            </div>
+
+            <table class="table table-striped table-hover mt-4" style="cursor: pointer;">
+                
+                <thead class="thead">
+                    <tr class="table">
+                        <th> ID</th>
+                        <th>Ganancia</th>
+                        <th>Fecha</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (var ganancia in ganancias)
+                    {
+                        <tr>
+                            <td>@ganancia.GananciaId</td>
+                            <td>@ganancia.Monto</td>
+                            <td>@ganancia.FechaGanancia.ToString("dd/MM/yyyy")</td>                            
+                            <td><a class="btn btn-sm btn-outline-primary oi oi-eye"
+                                href="Ganancia/@ganancia.GananciaId">Ver</a>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</EditForm>
+
+@code
+{
+    public string? Filtro { get; set; }
+    public string? Criterio { get; set; }
+    public DateTime FechaDesde { get; set; } = new DateTime(2022, 1, 1);
+    public DateTime FechaHasta { get; set; } = DateTime.Today;
+    public List<Ganancias> ganancias { get; set; } = new List<Ganancias>();
+    public List<Loterias> loterias { get; set; } = new List<Loterias>();
+
+    protected override void OnInitialized()
+    {
+        ganancias = gananciasBLL.GetList(gan => true);
+
+    }
+    public void Buscar()
+    {
+        ganancias = new List<Ganancias>();
+
+        if (FechaHasta != null)
+            FechaHasta = FechaHasta.AddHours(23).AddMinutes(59).AddSeconds(59);
+
+        if (Criterio != null)
+        {
+            switch (Filtro)
+            {
+                case "1": //Id
+                    {
+                        int ID = Utilities.ToInt(Criterio);
+                        if (ID == -1)
+                        {
+                            ganancias = gananciasBLL.GetList(gan => gan.FechaGanancia >= FechaDesde && gan.FechaGanancia <= FechaHasta);
+                        }
+                        else
+                        {
+                            ganancias = gananciasBLL.GetList(gan => gan.GananciaId == ID && gan.FechaGanancia >= FechaDesde && gan.FechaGanancia <=
+                            FechaHasta);
+                        }
+                        break;
+                    }
+                case "2": // Monto
+                    {
+                        decimal Monto = Utilities.ToDecimal(Criterio);
+                        if (Monto == -1)
+                        {
+                            ganancias = gananciasBLL.GetList(gan => gan.FechaGanancia >= FechaDesde && gan.FechaGanancia <= FechaHasta);
+                        }
+                        else
+                        {
+                            ganancias = gananciasBLL.GetList(gan => gan.Monto == Monto && gan.FechaGanancia >= FechaDesde &&
+                            gan.FechaGanancia <= FechaHasta);
+                        }
+                        break;
+                    }
+
+            }
+        }
+        else
+        {
+            ganancias = gananciasBLL.GetList(gan => gan.FechaGanancia.Month >= DateTime.Today.Month && gan.FechaGanancia.Year >=
+            DateTime.Today.Year);
+        }
+    }
+}

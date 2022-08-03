@@ -1,0 +1,75 @@
+﻿@*page "/"
+
+<PageTitle>Index</PageTitle>
+
+<style>
+    body
+    {
+        background-color: beige;
+    }
+</style>
+<h1 style="Margin:20px; text-shadow: 1px 2px rgba(0, 0, 0, 0.5); text-align: center; color:black">My Lotto Rewards</h1>
+<body>
+    
+    <div class="container">
+        <div class="row">
+            <div class="card" style="width: 30rem;">
+                @*<img src="./ImagenLotto/Lotto.jpg" class="max-width" />@
+                <img src="./ImagenLotto/Loto.jpg" class="max-width" />
+
+            </div>
+
+        </div>
+
+    </div>
+   
+</body>*@
+@page "/datagrid-column-resizing"
+
+
+@using Microsoft.EntityFrameworkCore
+@using Radzen.Blazor.Rendering
+
+@inject UsuariosBLL usuariosBLL
+
+<h1> My Lotto Rewards <strong></strong></h1>
+
+<p>Welcome!</p>
+
+    <RadzenDataGrid Data= "usuarios" TItem="Usuarios" ColumnWidth="50px" AllowColumnResize="true" ColumnResized=@OnColumnResized>
+        <Columns>
+            <RadzenDataGridColumn TItem="Usuarios" Property="UsuariosID" Title="ID" Width="50px" TextAlign="TextAlign.Center" />
+
+
+            <RadzenDataGridColumn TItem="Usuarios" Property="UsuarioId" Title="Usuarios" />
+            <RadzenDataGridColumn TItem="Usuarios" Property="TicketId" Title="Ticket" />
+            <RadzenDataGridColumn TItem="Usuarios" Property="Loterias" Title="Loterias" />
+            <RadzenDataGridColumn TItem="Usuarios" Property="Ganancias" Title="Winners" />
+            <RadzenDataGridColumn TItem="Usuarios" Property="Perdidas" Title="Losers" />
+           @* <RadzenDataGridColumn TItem="Usuarios" Property="BirthDate" Title="Birth Date" FormatString="{0:d}" />*@
+            
+        </Columns>
+    </RadzenDataGrid>
+
+<RadzenCard Class="mt-4">
+   @* <EventConsole @ref=@console />*@
+</RadzenCard>
+
+@code {
+
+    public int UsuarioId { get; set; }
+    IEnumerable<Usuarios> usuarios;
+    //EventConsole console;
+
+    void OnColumnResized(DataGridColumnResizedEventArgs<Usuarios> args)
+    {
+        //console.Log($"Resized {args.Column.Title} to {args.Width} pixels");
+    }
+
+    protected override void OnInitialized()
+    {
+       //usuarios = DbContext.Usuarios;
+    }
+
+    
+}

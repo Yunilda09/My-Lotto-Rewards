@@ -1,0 +1,68 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@using ProyectoFinal_AP1
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@*inject UsuariosBLL usuariosBLL*@
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<ul class="navbar-nav">
+@if (SignInManager.IsSignedIn(User))
+{
+    @*if(true)
+    {var claim = User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier);
+
+        var UserIdApi = claim?.Value;
+
+        Usuarios usuarios = new Usuarios();
+
+        usuarios.UserApi = UserIdApi;
+
+        if(usuariosBLL.BuscarUser(UserIdApi) != null)
+
+        {
+
+           if(usuariosBLL.Guardar(usuarios)){
+
+            Console.WriteLine("Se guardo");
+
+           }
+
+            else {
+
+            Console.WriteLine("no se guardo");
+
+        }   
+
+        }
+
+        else
+
+         {
+
+            Console.WriteLine("no se encontro");
+
+        } 
+
+    }*@
+    
+    <li class="nav-item">
+        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a>
+    </li>
+    <li class="nav-item">
+        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+            <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li>
+}
+</ul>

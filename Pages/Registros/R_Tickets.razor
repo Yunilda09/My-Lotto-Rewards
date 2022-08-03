@@ -1,0 +1,321 @@
+@page "/Ticket"
+@page "/Ticket/{TicketId:int}"
+@attribute [Authorize]
+
+@inject TicketsBLL ticketsBLL
+@inject TicketsBLL ticketsBLL
+@inject NotificationService notificationService
+@inject LoteriasBLL loteriaBLL
+@inject TipoJugadasBLL tipoJugadasBLL
+
+
+<EditForm Model="ticket" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="card border-primary mb-2" style="max-width: 100rem;">
+        <div class="card text-dark bg-light mb-3">
+
+            <h2 style="Margin:5px; text-shadow: 1px 2px rgba(0, 0, 0, 0.5); text-align: center; color:black">Registro Ticket</h2>
+        </div>
+            <div class="card-body">
+
+                <div class="row justify-content-between">
+                    <div class="col-3">
+                    <label>Ticket Id</label>
+                    <div class="input-group mb-3">
+                          <input type="number" class="form-control" @bind-value="ticket.TicketId" aria-label="Recipient's username" aria-describedby="basic-addon2">
+                        <button class="btn btn-outline-primary" type="button" @onclick="Buscar"> <i class="oi oi-magnifying-glass" /> </button>
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <label>Fecha</label>
+                    <input type="date" class="form-control" @bind-value="@ticket.FechaTicket"  aria-label="Recipient's username" aria-describedby="basic-addon2">
+                </div>
+            </div>
+            
+            @* GANANCIA DETALLE*@ 
+            <fieldset class="border-success">
+                <div class="card-body">
+               <div class="row">
+                @* Loteria Id *@
+                <div class="col-2">
+                     <label>Loterias</label>
+                            <div class="btn-group me-2" role="group" aria-label="Second group">
+                             <select class="form-select" @bind="detalle.LoteriaId"
+                                 aria-label=".form-select-lg example">
+                                <option value="0" hidden selected>Seleccione</option>
+                                    @foreach (var loteria in loteriaList)
+                                    {
+                                        <option value="@loteria.LoteriaId"> @loteria.NombreLoteria</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                 @* Tipo Jugadas Id *@
+                <div class="col-3">
+                    <label>Tipos de jugadas</label>
+                     <div class="input-group mb-3">
+                         <InputSelect class="form-select" @bind-Value="detalle.TipoJugadaId">
+                          <option value="0" hidden selected >Seleccione</option>
+                             @foreach( var tipoJugadas in TipoJugadasList)
+                             {
+                            <option value="@tipoJugadas.TipoJugadaId"> @tipoJugadas.NombreJugada</option> 
+                             }  
+                            </InputSelect>
+                            
+                        </div>
+                </div>
+
+                   @* Monto *@
+                <div class="col-2">
+                    <label>Monto</label>
+                    <InputNumber class="form-control" @bind-Value="detalle.Monto" />     
+                </div>            
+
+                 @*Boton de agregar detalle*@
+                <div class="col-2">
+                    <button type="button" class="btn btn-outline-primary input-group-text mt-4" @onclick="Agregardetalle">
+                        <span class="oi oi-plus"></span>
+                    </button>
+                </div>
+               </div>
+            </div>
+            </fieldset>
+
+            
+            @* Tabla de detalles *@
+            <hr />
+            <table class="table table-bordered table-light">
+                <thead class="thead">
+                    <tr class="table">
+                        <th>Nombre Loteria</th> 
+                        <th>Tipo Jugada</th>
+                        <th>Monto</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                      @foreach (var item in ticket.Detalle)
+                    {
+                        <tr>
+                            <td>@ticketsBLL.GetNombreLoteria(item.LoteriaId)</td>
+                            <td>@ticketsBLL.GetNombreJugada( item.TipoJugadaId)</td>
+                            <td>@item.Monto</td>
+                            <td><span class="btn btn-sm btn-outline-primary oi oi-ban" href="#"
+                                    @onclick="@(() => RemoverFila(item))">Remover</span> </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+             <div class="row  d-flex justify-content-end">
+                    <div class="col-2">
+                        <label>Total Monto</label>
+                        <span class="form-control">@ticket.TotalMonto.ToString("N2") </span>
+                    </div>
+                </div>
+            <hr/>
+             <div class="card-footer d-flex justify-content-center">
+            <div class="d-grid gap-2 d-md-block">
+                <button type="button" class="btn btn-outline-primary" @onclick="Nuevo" > <i class="oi oi-file" /> Nuevo</button>
+                <button type="submit" class="btn btn-outline-success"> <i class="oi oi-document" /> Guardar</button>
+                <button type="button" class="btn btn-outline-danger"  @onclick="Eliminar"><i class="oi oi-trash" /> Eliminar</button>
+            </div>
+        </div>
+        </div>
+    </div>
+   
+
+</EditForm>
+@code
+{
+    [Parameter]
+    public int TicketId { get; set; }
+    public Tickets ticket { get; set; } = new Tickets();
+    public Loterias? loteria { get; set; } = new Loterias();
+    public TipoJugadas? tipoJugadas { get; set; }= new TipoJugadas();
+    public TicketsDetalle detalle  { get; set; } = new TicketsDetalle();
+    public List<Loterias> loteriaList { get; set; } = new List<Loterias>();
+    public List<TipoJugadas> TipoJugadasList { get; set; } = new List<TipoJugadas>();
+
+    /*[CascadingParameter]
+    public Task<AuthenticationState> autenticationState { get; set; }*/
+
+    protected override void OnInitialized()
+    {
+            loteriaList = loteriaBLL.GetLoterias();
+            TipoJugadasList = tipoJugadasBLL.GetTipoJugadas();
+            ticket.FechaTicket = DateTime.Now;
+            ticket.TotalMonto = 0;
+            
+
+            if (TicketId > 0)
+            {
+                ticket.TicketId = TicketId;
+                Buscar();
+            }
+    }
+   /* protected async override Task OnInitializedAsync()
+
+        {
+            await base.OnInitializedAsync();
+
+            var authState = await auteticationState;
+
+            var user = authState.User;
+
+            var claim = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier);
+
+            var UserIdApi = claim?.Value;
+
+        }*/
+    void Buscar()
+    {
+            var encontrado = ticketsBLL.Buscar(ticket.TicketId);
+            if (encontrado != null)
+                ticket = encontrado;
+    }
+    void Nuevo()
+    {
+            this.ticket = new Tickets(); 
+            this.detalle = new TicketsDetalle();
+            this.loteria = new Loterias();
+            this.tipoJugadas = new TipoJugadas();       
+    }
+    void Guardar()
+    {
+           if  (TicketValida() && ticketsBLL.Guardar(this.ticket))
+           {
+                Nuevo(); 
+
+                ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Guardado correctamente"
+            }
+            );
+        }else{
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "No se pudo guardar"
+            }
+            );
+           }                     
+    }      
+    public void Agregardetalle()
+    {
+            if(detalleValido())
+        { 
+            loteria = loteriaBLL.Buscar(detalle.LoteriaId);
+            if(loteria==null)
+            {
+               ShowNotification(
+                new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Loteria no encontrada"
+                }
+                );
+                return;
+            }
+        }
+            tipoJugadas = tipoJugadasBLL.Buscar(detalle.TipoJugadaId);
+            if(tipoJugadas==null)
+            {
+               ShowNotification(
+                new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Tipo de jugada no encontrada"
+                }
+                );
+                return;
+            }
+            var tipo = ticketsBLL.Buscar(detalle.TipoJugadaId);
+            ticket.TotalMonto = ticket.Detalle.Sum(det => det.Monto);
+            this.ticket.Detalle.Add(this.detalle);
+            this.ticket.Monto += (detalle.Monto);
+            this.detalle = new TicketsDetalle();
+            this.loteria=new Loterias();
+            this.tipoJugadas = new TipoJugadas();
+    }
+    void Eliminar()
+    {
+            if(ticketsBLL.Eliminar(this.ticket))
+            {
+              ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Se elimino correctamente"
+            });
+            Nuevo();
+        }
+        else
+        {
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "No se pudo eliminar"
+            });
+        }
+    }
+    private bool TicketValida()
+    {
+        if(ticket.Detalle.Count<=0)
+        {
+            ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Debe ingresar al menos una loteria"
+            });
+            return false;
+        }
+        return true;
+    }
+    private bool detalleValido()
+    {
+        string MensajeError ="";
+        if(detalle.LoteriaId==0)
+        {
+            MensajeError+="Debe seleccionar una loteria\n";
+        }
+        if(detalle.TipoJugadaId==0)
+        {
+            MensajeError+="Debe seleccionar un tipo de jugada\n";
+        }
+        if(detalle.Monto<=0)
+        {
+            MensajeError+="Debe ingresar un monto valido\n";
+        }
+        if(MensajeError.Length>0)
+        {
+           ShowNotification(
+            new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = MensajeError
+            });
+            return false;
+        }
+        return true;
+    }
+    void RemoverFila(TicketsDetalle item)
+    {
+        this.detalle=item;
+        ticket.Detalle.Remove(item);
+        ticket.Monto -= item.Monto;
+    }
+    void ShowNotification(NotificationMessage message)
+    {
+        notificationService.Notify(message);
+    }
+             
+        
+}
